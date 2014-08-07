@@ -37,7 +37,7 @@ describe UaaSession do
 
     context 'when the access token is expired' do
       let(:token_issuer) { double(CF::UAA::TokenIssuer, refresh_token_grant: token_info) }
-      let(:token_info) { CF::UAA::TokenInfo.new(access_token: 'new_access_token', refresh_token: 'new_refresh_token', token_type: 'bearer') }
+      let(:token_info) { CF::UAA::TokenInfo.new("access_token" => 'new_access_token', "refresh_token" => 'new_refresh_token', "token_type" => 'bearer') }
 
       before do
         allow(CF::UAA::TokenCoder).to receive(:decode).and_return('exp' => 1.minute.ago.to_i)
