@@ -36,23 +36,46 @@ describe UaaSession do
     end
 
     context 'when the access token is expired' do
-      let(:token_issuer) { double(CF::UAA::TokenIssuer, refresh_token_grant: token_info) }
-      let(:token_info) { CF::UAA::TokenInfo.new(access_token: 'new_access_token', refresh_token: 'new_refresh_token', token_type: 'bearer') }
+      context 'and token_info symbolize_keys true' do
+        let(:token_issuer) { double(CF::UAA::TokenIssuer, refresh_token_grant: token_info) }
+        let(:token_info) { CF::UAA::TokenInfo.new(access_token: 'new_access_token', refresh_token: 'new_refresh_token', token_type: 'bearer') }
 
-      before do
-        allow(CF::UAA::TokenCoder).to receive(:decode).and_return('exp' => 1.minute.ago.to_i)
+        before do
+          allow(CF::UAA::TokenCoder).to receive(:decode).and_return('exp' => 1.minute.ago.to_i)
 
-        expect(CF::UAA::TokenIssuer).to receive(:new).
-          with(login_url, dashboard_client_id, dashboard_client_secret, { token_target: uaa_url }).
-          and_return(token_issuer)
+          expect(CF::UAA::TokenIssuer).to receive(:new).
+            with(login_url, dashboard_client_id, dashboard_client_secret, { token_target: uaa_url }).
+            and_return(token_issuer)
+        end
+
+        it 'uses the refresh token to get a new access token' do
+          expect(handler.auth_header).to eql('bearer new_access_token')
+        end
+
+        it 'updates the tokens' do
+          expect(handler.access_token).to eql('new_access_token')
+        end
       end
 
-      it 'uses the refresh token to get a new access token' do
-        expect(handler.auth_header).to eql('bearer new_access_token')
-      end
+      context 'and token_info default symbolize_keys' do
+        let(:token_issuer) { double(CF::UAA::TokenIssuer, refresh_token_grant: token_info) }
+        let(:token_info) { CF::UAA::TokenInfo.new("access_token" => 'new_access_token', "refresh_token" => 'new_refresh_token', "token_type" => 'bearer') }
 
-      it 'updates the tokens' do
-        expect(handler.access_token).to eql('new_access_token')
+        before do
+          allow(CF::UAA::TokenCoder).to receive(:decode).and_return('exp' => 1.minute.ago.to_i)
+
+          expect(CF::UAA::TokenIssuer).to receive(:new).
+            with(login_url, dashboard_client_id, dashboard_client_secret, { token_target: uaa_url }).
+            and_return(token_issuer)
+        end
+
+        it 'uses the refresh token to get a new access token' do
+          expect(handler.auth_header).to eql('bearer new_access_token')
+        end
+
+        it 'updates the tokens' do
+          expect(handler.access_token).to eql('new_access_token')
+        end
       end
     end
   end
